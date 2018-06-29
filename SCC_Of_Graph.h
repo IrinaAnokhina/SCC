@@ -5,7 +5,7 @@ using std::cout;
 #include<iterator>
 #include<deque>
 #include<vector>
-#include"Node.h"
+#include"GraphNode.h"
 
 template<typename T>
 class Graph
