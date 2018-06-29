@@ -5,55 +5,57 @@ using std::cout;
 #include<iterator>
 #include<deque>
 #include<vector>
-#include"GraphNode.h"
+#include"Node.h"
 
 template<typename T>
 class Graph
 {
 public:
-	Graph(int c)
-	: graphCount(c) {};
-	Graph(const Graph<T> *, int);
+	Graph() { ++graphCount; }
 	~Graph();
-	const Graph<T> *operator=(const Graph<T> &);
+
 	void addNode(T);
 	void printGraph() const;
 	void printAdj() const;
 	void createAdj();
 	void DFS();
 	void topologicalSort();
-	void SCC(Graph<T>*);
+	void SCC();
 	const int getSCC() { return sccCount; }
 private:
+	Graph(const Graph<T> &);
+	const Graph<T> &operator=(const Graph<T> &);
 	std::list<GraphNode<T>*>my_graph;
 	std::deque<GraphNode<T>>sorting;
 	std::vector<GraphNode<T>*>components;
 	GraphNode<T>* search(T);
 	//main algorithm is using a graph transpose
-	void transponing(const Graph<T> *);
+	void transponing(const Graph<T> &);
 	void DFS_Visit(GraphNode<T> *);
-	void DFS2(GraphNode<T> *, Graph<T>*);
+	void DFS2(GraphNode<T> *, Graph<T>&);
 	bool operator==(const Graph<T> &) const;
 	bool operator!=(const Graph &right) const
 	{
 		return !(*this == right);
 	}
-	int graphCount;
+	static int graphCount;
 	int time = 0;
 	int sccCount = 0;
 };
 
 template<typename T>
-Graph<T>::Graph(const Graph<T> *right, int c)
-	:count(c)
+int Graph<T>::graphCount = 0;
+
+template<typename T>
+Graph<T>::Graph(const Graph<T> &right)
 {
-	if(!right->my_graph.empty())
-	for (auto j : right->my_graph)
-	{
-		T val = j->getKey();
-		addNode(val);
-	}
-	transponing(right);
+	if (!right.my_graph.empty())
+		for (auto j : right.my_graph)
+		{
+			T val = j->getKey();
+			addNode(val);
+		}
+	++graphCount;
 }
 
 template<typename T>
@@ -70,6 +72,7 @@ Graph<T>::~Graph()
 			delete *temp;
 		}
 	}
+	--graphCount;
 }
 
 template<typename T>
@@ -83,18 +86,19 @@ bool Graph<T>::operator==(const Graph<T> &right)const
 }
 
 template<typename T>
-const Graph<T>* Graph<T>::operator=(const Graph<T> &right)
+const Graph<T>& Graph<T>::operator=(const Graph<T> &right)
 {
 	if (this != &right)
 	{
+		my_graph.clear();
 		for (auto j : right.my_graph)
 		{
+
 			T val = j->getKey();
 			this->addNode(val);
 		}
-		transponing(&right);
 	}
-	return this;
+	return *this;
 }
 
 template<typename T>
@@ -109,6 +113,8 @@ void Graph<T>::printGraph() const
 {
 	if (!(my_graph.empty()))
 	{
+		std::cout << std::endl << "Graph contains " << my_graph.size() << " elements:\n";
+
 		for (auto j : my_graph)
 			cout << j->getKey() << " ";
 		std::cout << std::endl;
@@ -124,10 +130,10 @@ void Graph<T>::printAdj() const
 		{
 			cout << j->getKey();
 			for (auto i : j->adjacency)
-				cout << " -> " << i->getKey() ;
+				cout << " -> " << i->getKey();
 			cout << std::endl;
 		}
-		
+
 	}
 }
 
@@ -215,51 +221,55 @@ void Graph<T>::topologicalSort()
 }
 
 template<typename T>
-void Graph<T>::transponing(const Graph<T> *g)
+void Graph<T>::transponing(const Graph<T> &g)
 {
-	for (auto j : g->my_graph)
+	for (auto j : g.my_graph)
 	{
 		auto node = search(j->getKey());
-		if(!j->adjacency.empty())
-		for (auto i : j->adjacency)
-		{
-			auto cur = search(i->getKey());
-			if(cur != nullptr && node != nullptr)
-			cur->adjacency.push_back(node);
-		}
+		if (!j->adjacency.empty())
+			for (auto i : j->adjacency)
+			{
+				auto cur = search(i->getKey());
+				if (cur != nullptr && node != nullptr)
+					cur->adjacency.push_back(node);
+			}
 	}
 }
 
 template<typename T>
-void Graph<T>::SCC(Graph<T> *transp)
+void Graph<T>::SCC()
 {
 	topologicalSort();
 	for (auto j : my_graph)
 		j->color = WHITE;
-
-	for (size_t i = 0; i < sorting.size(); ++i)      
+	Graph<T>trG;
+	trG = *this;
+	trG.transponing(*this);
+	trG.printGraph();
+	trG.printAdj();
+	for (size_t i = 0; i < sorting.size(); ++i)
 	{
 		T v = sorting[i].getKey();
-		GraphNode<T>* cur = transp->search(v);
+		GraphNode<T>* cur = trG.search(v);
 		cout << "\n";
 		if (cur != nullptr)
 			if (cur->color == WHITE)
 			{
-				DFS2(cur, transp);
-				for (auto i : transp->components)
+				DFS2(cur, trG);
+				for (auto i : trG.components)
 					cout << i->getKey() << " ";
 				cout << "\n";
-				transp->components.clear();
+				trG.components.clear();
 				++sccCount;
 			}
 	}
 }
 
 template<typename T>
-void Graph<T>::DFS2(GraphNode<T> *vert, Graph<T> *transp)
+void Graph<T>::DFS2(GraphNode<T> *vert, Graph<T> &transp)
 {
 	vert->color = GRAY;
-	transp->components.push_back(vert);
+	transp.components.push_back(vert);
 	for (auto j : vert->adjacency)
 		if (j->color == WHITE)
 		{
@@ -267,5 +277,3 @@ void Graph<T>::DFS2(GraphNode<T> *vert, Graph<T> *transp)
 			DFS2(j, transp);
 		}
 }
-
-
