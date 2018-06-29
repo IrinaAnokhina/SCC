@@ -1,12 +1,12 @@
 #include<iostream>
 
-#include"Graph.h"
+#include"SCC_Of_Graph.h"
 #include"vld.h"
 
 int main()
 {
 	int count{};
-	Graph<char>g(++count);
+	Graph<char>g;
 	g.addNode('a');
 	g.addNode('b');
 	g.addNode('c');
@@ -19,10 +19,7 @@ int main()
 	g.printGraph();
 	g.createAdj();
 	g.printAdj();
-	Graph<char>trG( ++count);
-	trG = g;
-	trG.printGraph();
-	trG.printAdj();
-	g.SCC(&trG);
+	g.SCC();
 	cout << "Amount of CSS is " << g.getSCC() << "\n";
+
 }
